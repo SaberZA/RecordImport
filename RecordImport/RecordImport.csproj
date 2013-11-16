@@ -40,6 +40,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BinarySearchTree\InOrderIterator.cs" />
     <Compile Include="BinarySearchTree\ITree.cs" />
     <Compile Include="BinarySearchTree\BinaryTree.cs" />
     <Compile Include="BinarySearchTree\TreeNode.cs" />

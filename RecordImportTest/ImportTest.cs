@@ -70,10 +70,9 @@ namespace RecordImportTest
             Assert.AreEqual("Blades",recordMaureenBlades44.GetValueByProperty(PersonElements.Surname));
             Assert.AreEqual("44", recordMaureenBlades44.GetValueByProperty(PersonElements.Age));
         }
-
-        [Ignore] //TODO Van Der Merwe, Steven 15 Nov 2013: Ignored Test - BubbleSort taking too long
+        
         [TestMethod]
-        public void CanSortAllRecordsWithCompareTo_GivenRecordsFile_ShouldReturnBubbleSortedList()
+        public void CanSortRecordsIntoTree_GivenRecordsFile_ShouldReturnSortedTree()
         {
             //---------------Set up test pack-------------------
             var allLines = Import.GetAllRecordFileLines();
@@ -83,13 +82,55 @@ namespace RecordImportTest
             var properties = Import.GetRecordProperties(allLines, 0);
             var allRecords = Import.LoadAllRecordsIntoObjects(allLines, properties);
 
-            var sortedRecords = ApplyBubbleSort(allRecords).ToList();
-            var greatestPerson = sortedRecords[sortedRecords.Count - 1];
-            var lowestPerson = sortedRecords[0];
-            
+            var personsTree = new BinaryTree<Person>(allRecords.ToArray());
+            //personsTree.SortingProperties = new List<string>() {PersonElements.Surname, PersonElements.FirstName};
+            //BinaryTree<Person> sortedTree = personsTree.Sort();
             //---------------Test Result -----------------------
-            
-            Assert.Fail("Test Not Yet Implemented");
+            var sortedPersonList = new List<Person>();
+            var treeIterator = personsTree.iterator();
+            while (treeIterator.MoveNext())
+            {
+                var person = treeIterator.Current;
+                sortedPersonList.Add(person);
+            }
+            Assert.AreEqual("Zunkel", sortedPersonList[49997].GetValueByProperty("Surname"));
+            Assert.AreEqual("Nj", sortedPersonList[49997].GetValueByProperty("FirstName"));
+            Assert.AreEqual("45", sortedPersonList[49997].GetValueByProperty("Age"));
+
+            Assert.AreEqual("Zunkel", sortedPersonList[49988].GetValueByProperty("Surname"));
+            Assert.AreEqual("Aindrea", sortedPersonList[49988].GetValueByProperty("FirstName"));
+            Assert.AreEqual("69", sortedPersonList[49988].GetValueByProperty("Age"));
+
+            Assert.AreEqual("Zissem", sortedPersonList[49987].GetValueByProperty("Surname"));
+            Assert.AreEqual("Jori", sortedPersonList[49987].GetValueByProperty("FirstName"));
+            Assert.AreEqual("56", sortedPersonList[49987].GetValueByProperty("Age"));
+        }
+
+        [TestMethod]
+        public void CanSortRecordsBySurnameFirstName_GivenRecordsFile_ShouldReturnDuplicateKeyException()
+        {
+            //---------------Set up test pack-------------------
+            var allLines = Import.GetAllRecordFileLines();
+            //---------------Assert Precondition----------------
+            Assert.IsTrue(allLines.Length > 0);
+            //---------------Execute Test ----------------------
+            var properties = Import.GetRecordProperties(allLines, 0);
+            var allRecords = Import.LoadAllRecordsIntoObjects(allLines, properties);
+
+            var personsTree = new BinaryTree<Person>(allRecords.ToArray());
+            personsTree.SortingProperties = new List<string>() {PersonElements.Surname, PersonElements.FirstName};
+            bool didRaiseException = false;
+            try
+            {
+                BinaryTree<Person> sortedTree = personsTree.Sort();
+            }
+            catch (DuplicateKeyException exception)
+            {
+                didRaiseException = true;
+                Debug.WriteLine(exception.Message);
+            }
+            //---------------Test Result -----------------------
+            Assert.AreEqual(true, didRaiseException);
         }
 
         [TestMethod]
@@ -103,74 +144,9 @@ namespace RecordImportTest
             var properties = Import.GetRecordProperties(allLines, 0);
             var allRecords = Import.LoadAllRecordsIntoObjects(allLines, properties);
 
-            BinaryTree<Person> personsTree = new BinaryTree<Person>(allRecords.ToArray());
+            var personsTree = new BinaryTree<Person>(allRecords.ToArray());
             //---------------Test Result -----------------------
             Assert.IsTrue(personsTree.getSize() == 49998);
-        }
-
-        [TestMethod]
-        public void ApplyBubbleSort_GivenRandomNumbers_ShouldReturnSortedNumbers()
-        {
-            //---------------Set up test pack-------------------
-            int[] list = {4, 3, 5, 9, 12, 1, 7, 8, 11};
-            //---------------Assert Precondition----------------
-
-            //---------------Execute Test ----------------------
-            ApplyBubbleSort(list);
-            //---------------Test Result -----------------------
-            foreach (int i in list)
-                Debug.Write(i + ", ");
-
-            Assert.IsTrue(list[0] == 1);
-            Assert.IsTrue(list[8] == 12);
-        }
-
-        
-
-        private IEnumerable<Person> ApplyBubbleSort(IEnumerable<Person> allRecords)
-        {
-            bool needNextPass = true;
-
-            var enumerableRecords = allRecords as IList<Person> ?? allRecords.ToList();
-            for (int k = 1; k < enumerableRecords.Count && needNextPass; k++)
-            {
-                needNextPass = false;
-                for (int i = 0; i < enumerableRecords.Count - k; i++)
-                {
-                    if (enumerableRecords[i].CompareTo(enumerableRecords[i+1]) > 0)
-                    {
-                        Person temp = enumerableRecords[i];
-                        enumerableRecords[i] = enumerableRecords[i + 1];
-                        enumerableRecords[i + 1] = temp;
-
-                        needNextPass = true;
-                    }
-                }
-            }
-            return enumerableRecords;
-        }
-
-        private IEnumerable<int> ApplyBubbleSort(IEnumerable<int> allRecords)
-        {
-            bool needNextPass = true;
-
-            var enumerableRecords = allRecords as IList<int> ?? allRecords.ToList();
-            for (int k = 1; k < enumerableRecords.Count && needNextPass; k++)
-            {
-                needNextPass = false;
-                for (int i = 0; i < enumerableRecords.Count - k; i++)
-                {
-                    if (enumerableRecords[i].CompareTo(enumerableRecords[i + 1]) > 0)
-                    {
-                        int temp = enumerableRecords[i];
-                        enumerableRecords[i] = enumerableRecords[i + 1];
-                        enumerableRecords[i + 1] = temp;
-
-                        needNextPass = true;
-                    }
-                }
-            }
-            return enumerableRecords;
         }
     }
 }

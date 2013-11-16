@@ -9,20 +9,21 @@ using RecordImport.Common;
 namespace RecordImport.BinarySearchTree
 {
     public class BinaryTree<E> : ITree<E>
-        where E : IComparable<E>
+        where E : IComparable<E>, ISortable
     {
         public TreeNode<E> root;
         protected int size = 0;
+        public List<string> SortingProperties { get; set; }
 
         public BinaryTree(){} 
         public BinaryTree(E[] objects)
         {
+            SortingProperties = new List<string>() { PersonElements.Surname, PersonElements.FirstName, PersonElements.Age };
             foreach (E obj in objects)
             {
                 insert(obj);
             }
         }
-
 
         public bool search(E e)
         {
@@ -49,8 +50,9 @@ namespace RecordImport.BinarySearchTree
 
         public bool insert(E e)
         {
+            e.SetSortingProperties(SortingProperties);
             if (root == null)
-                root = createNewNode(e);
+                root = CreateNewNode(e);
             else
             {
                 TreeNode<E> parent = null;
@@ -73,27 +75,30 @@ namespace RecordImport.BinarySearchTree
                     else
                     {
                         var person = e as Person;
-                        if (person == null)
-                            return false;
-
-                        throw new DuplicateKeyException(string.Format("A key with Surname: {0}, FirstName:{1} and Age:{2} already exists",
-                            person.GetValueByProperty(PersonElements.Surname),
-                            person.GetValueByProperty(PersonElements.FirstName),
-                            person.GetValueByProperty(PersonElements.Age)));
+                        var exceptionStringBuilder = new StringBuilder();
+                        exceptionStringBuilder.Append("A key with ");
+                        foreach (var sortingProperty in SortingProperties)
+                        {
+                            if (person != null)
+                                exceptionStringBuilder.Append(string.Format("{0}: {1}, ", sortingProperty,
+                                                                            person.GetValueByProperty(sortingProperty)));
+                        }
+                        exceptionStringBuilder.Append("already exists.");
+                        throw new DuplicateKeyException(exceptionStringBuilder.ToString());
                     }
                 }
-
+                
                 if (e.CompareTo(parent.Element) < 0)
-                    parent.Left = createNewNode(e);
+                    parent.Left = CreateNewNode(e);
                 else
-                    parent.Right = createNewNode(e);
+                    parent.Right = CreateNewNode(e);
                 
             }
             size++;
             return true;
         }
 
-        private TreeNode<E> createNewNode(E e)
+        private TreeNode<E> CreateNewNode(E e)
         {
             return new TreeNode<E>(e);
         }
@@ -161,59 +166,28 @@ namespace RecordImport.BinarySearchTree
             size = 0;
         }
 
-        class InOrderIterator<E> : IEnumerator<E> where E : IComparable<E>
+        public BinaryTree<E> Sort()
         {
-            private List<E> list = new List<E>();
-            private int current = 0;
-            private BinaryTree<E> Parent { get; set; }
-
-            public InOrderIterator(BinaryTree<E> binaryTree)
+            var sortedTree = new BinaryTree<E>();
+            sortedTree.SortingProperties = this.SortingProperties;
+            var treeIterator = iterator();
+            while (treeIterator.MoveNext())
             {
-                this.Parent = binaryTree;
-                inOrder();
+                var item = treeIterator.Current;
+                if (item.Equals(null))
+                    continue;
+                sortedTree.insert(treeIterator.Current);
             }
-
-            private void inOrder()
-            {
-                inOrder(Parent.root);
-            }
-
-            private void inOrder(TreeNode<E> root)
-            {
-                if (root == null)
-                    return;
-                inOrder(root.Left);
-                list.Add(root.Element);
-                inOrder(root.Right);
-            }
-
-            public void Dispose()
-            {
-                
-            }
-
-            public bool MoveNext()
-            {
-                if (current < list.Count)
-                    return true;
-
-                return false;
-            }
-
-            public void Reset()
-            {
-                list = new List<E>();
-                current = 0;
-            }
-
-            public E Current { get; private set; }
-
-            object IEnumerator.Current
-            {
-                get { return list[current++]; }
-            }
+            return sortedTree;
         }
+
+        
+
+        
     }
 
-    
+    public interface ISortable
+    {
+        void SetSortingProperties(List<string> sortingProperties);
+    }
 }

@@ -1,16 +1,19 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using RecordImport.BinarySearchTree;
 using RecordImport.Common;
 
 namespace RecordImport
 {
-    public class Person : IComparable<Person>
+    public class Person : IComparable<Person>, ISortable
     {
         private List<string> Values { get; set; }
         private List<string> Properties { get; set; }
         public List<KeyValuePair<string, string>> Data { get; private set; }
+        public List<string> SortingProperties { get; set; }
 
         public Person(IEnumerable<string> properties, IEnumerable<string> values)
         {
@@ -29,15 +32,15 @@ namespace RecordImport
         public bool Has(string property, string value)
         {
             var propertyKeyValue = Data.FirstOrDefault(p => p.Key == property);
-
+            if (propertyKeyValue.Equals(null))
+                return false;
             return propertyKeyValue.Value.ToUpper() == value.ToUpper();
         }
 
         public string GetValueByProperty(string property)
         {
             var propertyKeyValue = Data.FirstOrDefault(p => p.Key == property);
-
-            return propertyKeyValue.Value;
+            return propertyKeyValue.Equals(null) ? null : propertyKeyValue.Value;
         }
         
 
@@ -51,38 +54,86 @@ namespace RecordImport
             return Equals(GetValueByProperty(propertyElement), targetObject.GetValueByProperty(propertyElement));
         }
 
-        public int CompareTo(Person other)
+        public int CompareTo(Person targetOBject)
         {
-            if (other == null)
+            if (targetOBject == null)
                 return 1;
 
-            bool surnameIsGreater = CompareGreaterThanProperties(other, PersonElements.Surname);
-            bool firstNameIsGreater = CompareGreaterThanProperties(other, PersonElements.FirstName);
-            bool ageIsGreater = CompareGreaterThanProperties(other, PersonElements.Age);
+            bool targetGreaterThan = CheckSelfGreaterThan(targetOBject);
 
-            bool surnameIsEqual = CompareEqualProperties(other, PersonElements.Surname);
-            bool firstNameIsEqual = CompareEqualProperties(other, PersonElements.FirstName);
-            bool ageIsEqual = CompareEqualProperties(other, PersonElements.Age);
+            bool targetEqual = CheckSelfEqualTo(targetOBject);
 
-
-            if (surnameIsEqual &&
-                firstNameIsEqual &&
-                ageIsEqual)
+            if (targetGreaterThan)
+            {
+                return 1;
+            }
+            if (targetEqual)
+            {
                 return 0;
-
-            if (surnameIsGreater)
-                return 1;
-
-            if (surnameIsEqual &&
-                firstNameIsGreater)
-                return 1;
-
-            if (surnameIsEqual &&
-                firstNameIsEqual &&
-                ageIsGreater)
-                return 1;
+            }
 
             return -1;
+
+            //bool surnameIsGreater = CompareGreaterThanProperties(targetOBject, PersonElements.Surname);
+            //bool firstNameIsGreater = CompareGreaterThanProperties(targetOBject, PersonElements.FirstName);
+            //bool ageIsGreater = CompareGreaterThanProperties(targetOBject, PersonElements.Age);
+
+
+
+            //bool surnameIsEqual = CompareEqualProperties(targetOBject, PersonElements.Surname);
+            //bool firstNameIsEqual = CompareEqualProperties(targetOBject, PersonElements.FirstName);
+            //bool ageIsEqual = CompareEqualProperties(targetOBject, PersonElements.Age);
+
+
+            //if (surnameIsEqual &&
+            //    firstNameIsEqual &&
+            //    ageIsEqual)
+            //    return 0;
+
+            //if (surnameIsGreater)
+            //    return 1;
+
+            //if (surnameIsEqual &&
+            //    firstNameIsGreater)
+            //    return 1;
+
+            //if (surnameIsEqual &&
+            //    firstNameIsEqual &&
+            //    ageIsGreater)
+            //    return 1;
+        }
+
+        private bool CheckSelfGreaterThan(Person targetOBject)
+        {
+            bool isGreater;
+            bool isEqual;
+            int sortingIndex = 0;
+            do
+            {
+                isEqual = CompareEqualProperties(targetOBject, SortingProperties[sortingIndex]);
+                if (!isEqual)
+                {
+                    isGreater = CompareGreaterThanProperties(targetOBject, SortingProperties[sortingIndex]);
+                    return isGreater;
+                }
+
+                sortingIndex++;
+            } while (isEqual && sortingIndex < SortingProperties.Count);
+            return false;
+        }
+
+        private bool CheckSelfEqualTo(Person targetOBject)
+        {
+            if (SortingProperties.Select(sortingProperty => CompareEqualProperties(targetOBject, sortingProperty)).Any(isEqual => !isEqual))
+            {
+                return false;
+            }
+            return true;
+        }
+
+        public void SetSortingProperties(List<string> sortingProperties)
+        {
+            this.SortingProperties = sortingProperties;
         }
     }
 }
